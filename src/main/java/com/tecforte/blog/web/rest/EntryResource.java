@@ -20,7 +20,8 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.net.URI;
 import java.net.URISyntaxException;
-
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,6 +45,17 @@ public class EntryResource {
         this.entryService = entryService;
     }
 
+    private void validateContent(EntryDTO entryDTO){
+        List<String> sadKeywords = Arrays.asList("sad","fear","lonely");
+        List<String> happyKeywords = Arrays.asList("love","happy","trust");
+
+        for (String keyword : entryDTO.isBlogPositive() ? sadKeywords : happyKeywords){
+            if (entryDTO.getTitle().toLowerCase().matches(".*\\b" + keyword + "\\b.*") ||
+                entryDTO.getTitle().toLowerCase().matches(".*\\b" + keyword + "\\b.*"))
+            throw new BadRequestAlertException("Invalid Content", ENTITY_NAME, "invalidContent");
+        }
+    }
+
     /**
      * {@code POST  /entries} : Create a new entry.
      *
@@ -57,6 +69,7 @@ public class EntryResource {
         if (entryDTO.getId() != null) {
             throw new BadRequestAlertException("A new entry cannot already have an ID", ENTITY_NAME, "idexists");
         }
+        validateContent(entryDTO);
         EntryDTO result = entryService.save(entryDTO);
         return ResponseEntity.created(new URI("/api/entries/" + result.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, false, ENTITY_NAME, result.getId().toString()))
@@ -74,30 +87,10 @@ public class EntryResource {
      */
     @PutMapping("/entries")
     public ResponseEntity<EntryDTO> updateEntry(@Valid @RequestBody EntryDTO entryDTO) throws URISyntaxException {
-        
-        if (entryDTO.getId() == null) {
-            throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
-        }else if (entryDTO.isBlogPositive()){
-            if (entryDTO.getTitle().toLowerCase().matches(".*\\b" + "sad" + "\\b.*") ||
-                entryDTO.getTitle().toLowerCase().matches(".*\\b" + "fear" + "\\b.*") ||
-                entryDTO.getTitle().toLowerCase().matches(".*\\b" + "lonely" + "\\b.*") ||
-                entryDTO.getContent().toLowerCase().matches(".*\\b" + "sad" + "\\b.*") ||
-                entryDTO.getContent().toLowerCase().matches(".*\\b" + "fear" + "\\b.*") ||
-                entryDTO.getContent().toLowerCase().matches(".*\\b" + "lonely" + "\\b.*")){
-                throw new BadRequestAlertException("Invalid Content", ENTITY_NAME, "invalidContent");
-            }
-        }else if (!entryDTO.isBlogPositive()){
-            if (entryDTO.getTitle().toLowerCase().matches(".*\\b" + "love" + "\\b.*") ||
-                entryDTO.getTitle().toLowerCase().matches(".*\\b" + "happy" + "\\b.*") ||
-                entryDTO.getTitle().toLowerCase().matches(".*\\b" + "trust" + "\\b.*") ||
-                entryDTO.getContent().toLowerCase().matches(".*\\b" + "love" + "\\b.*") ||
-                entryDTO.getContent().toLowerCase().matches(".*\\b" + "happy" + "\\b.*") ||
-                entryDTO.getContent().toLowerCase().matches(".*\\b" + "trust" + "\\b.*")){
-                throw new BadRequestAlertException("Invalid Content", ENTITY_NAME, "invalidContent");
-            }
-        }
-
         log.debug("REST request to update Entry : {}", entryDTO);
+        if (entryDTO.getId() == null) 
+            throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
+        validateContent(entryDTO);        
         EntryDTO result = entryService.save(entryDTO);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, false, ENTITY_NAME, entryDTO.getId().toString()))
