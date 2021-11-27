@@ -5,6 +5,7 @@ export interface IEntry {
   title?: string;
   emoji?: Emoji;
   content?: any;
+  blogPositive?: boolean;
   blogName?: string;
   blogId?: number;
   createdBy?: string;
@@ -19,6 +20,7 @@ export class Entry implements IEntry {
     public title?: string,
     public emoji?: Emoji,
     public content?: any,
+    public blogPositive?: boolean,
     public blogName?: string,
     public blogId?: number,
     public createdBy?: string,

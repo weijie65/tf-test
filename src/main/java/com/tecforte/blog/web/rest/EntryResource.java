@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -75,10 +74,30 @@ public class EntryResource {
      */
     @PutMapping("/entries")
     public ResponseEntity<EntryDTO> updateEntry(@Valid @RequestBody EntryDTO entryDTO) throws URISyntaxException {
-        log.debug("REST request to update Entry : {}", entryDTO);
+        
         if (entryDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
+        }else if (entryDTO.isBlogPositive()){
+            if (entryDTO.getTitle().toLowerCase().matches(".*\\b" + "sad" + "\\b.*") ||
+                entryDTO.getTitle().toLowerCase().matches(".*\\b" + "fear" + "\\b.*") ||
+                entryDTO.getTitle().toLowerCase().matches(".*\\b" + "lonely" + "\\b.*") ||
+                entryDTO.getContent().toLowerCase().matches(".*\\b" + "sad" + "\\b.*") ||
+                entryDTO.getContent().toLowerCase().matches(".*\\b" + "fear" + "\\b.*") ||
+                entryDTO.getContent().toLowerCase().matches(".*\\b" + "lonely" + "\\b.*")){
+                throw new BadRequestAlertException("Invalid Content", ENTITY_NAME, "invalidContent");
+            }
+        }else if (!entryDTO.isBlogPositive()){
+            if (entryDTO.getTitle().toLowerCase().matches(".*\\b" + "love" + "\\b.*") ||
+                entryDTO.getTitle().toLowerCase().matches(".*\\b" + "happy" + "\\b.*") ||
+                entryDTO.getTitle().toLowerCase().matches(".*\\b" + "trust" + "\\b.*") ||
+                entryDTO.getContent().toLowerCase().matches(".*\\b" + "love" + "\\b.*") ||
+                entryDTO.getContent().toLowerCase().matches(".*\\b" + "happy" + "\\b.*") ||
+                entryDTO.getContent().toLowerCase().matches(".*\\b" + "trust" + "\\b.*")){
+                throw new BadRequestAlertException("Invalid Content", ENTITY_NAME, "invalidContent");
+            }
         }
+
+        log.debug("REST request to update Entry : {}", entryDTO);
         EntryDTO result = entryService.save(entryDTO);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, false, ENTITY_NAME, entryDTO.getId().toString()))
@@ -124,6 +143,19 @@ public class EntryResource {
     public ResponseEntity<Void> deleteEntry(@PathVariable Long id) {
         log.debug("REST request to delete Entry : {}", id);
         entryService.delete(id);
+        return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, false, ENTITY_NAME, id.toString())).build();
+    }
+
+    /**
+     * {@code DELETE  /blogs/:id} : delete the "id" blog.
+     *
+     * @param id the id of the blogDTO to delete.
+     * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
+     */
+    @DeleteMapping("/entries/{id}/clean")
+    public ResponseEntity<Void> cleanBlog(@PathVariable Long id, @RequestBody String[] keywords) {
+        //log.debug("REST request to delete Entries : {}", id);
+        entryService.clean(id, keywords);
         return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, false, ENTITY_NAME, id.toString())).build();
     }
 }

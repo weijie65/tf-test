@@ -116,7 +116,8 @@ export class EntryUpdateComponent implements OnInit {
       title: this.editForm.get(['title']).value,
       emoji: this.editForm.get(['emoji']).value,
       content: this.editForm.get(['content']).value,
-      blogId: this.editForm.get(['blogId']).value
+      blogId: this.editForm.get(['blogId']).value,
+      blogPositive: this.blogs[this.editForm.get(['blogId']).value - 1].positive
     };
   }
 

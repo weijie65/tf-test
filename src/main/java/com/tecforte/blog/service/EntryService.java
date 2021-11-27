@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -80,5 +81,27 @@ public class EntryService {
     public void delete(Long id) {
         log.debug("Request to delete Entry : {}", id);
         entryRepository.deleteById(id);
+    }
+
+    /**
+     * Clean the blog by id and keywords
+     *
+     * @param id the id of the entity.
+     * @param keywords the keywords of the entity.
+     */
+    public void clean(Long id, String[] keywords) {
+        log.debug("Request to clean Blog : {}", id); 
+
+        Page<EntryDTO> dtos = findAll(PageRequest.of(0,100000));
+        for(EntryDTO dto : dtos){
+            if (dto.getBlogId() == id){
+                for (String keyword : keywords){
+                    keyword = keyword.toLowerCase();
+                    if (dto.getTitle().toLowerCase().matches(".*\\b" + keyword + "\\b.*") || dto.getContent().toLowerCase().matches(".*\\b" + keyword + "\\b.*")){
+                        entryRepository.deleteById(dto.getId());
+                    }
+                }
+            }
+        }
     }
 }
